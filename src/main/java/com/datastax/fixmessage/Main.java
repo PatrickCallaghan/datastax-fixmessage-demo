@@ -81,7 +81,7 @@ public class Main {
 		}
 		
 		timer.end();
-		logger.info(timer.getTimeTakenSeconds() + "ms to update " + noOfMessages*100 + " messages (" + (noOfMessages*100/timer.getTimeTakenSeconds()) +" a sec)");
+		logger.info(timer.getTimeTakenSeconds() + "sec to update " + noOfMessages*100 + " messages (" + (noOfMessages*4/timer.getTimeTakenSeconds()) +" a sec)");
 		
 		
 	}
