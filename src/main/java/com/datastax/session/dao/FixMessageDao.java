@@ -42,11 +42,11 @@ public class FixMessageDao {
 	}	
 	
 	public void saveMessage(FixMessage message){		
-		mapper.save(message);		
+		mapper.saveAsync(message);		
 	}
 	
 	public void updateField(String field, Object value, int id){
 		Statement statement = QueryBuilder.update(KEYSPACE, TABLE).with(set(field, value)).where(eq("id", id)).setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
-		session.execute(statement);		
+		session.executeAsync(statement);		
 	}	
 }
