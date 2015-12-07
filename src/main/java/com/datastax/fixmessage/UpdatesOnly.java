@@ -16,48 +16,45 @@ import com.datastax.fixmessage.model.FixMessage;
 import com.datastax.fixmessage.model.FixUpdate;
 import com.datastax.session.dao.FixMessageDao;
 
-public class Main {
+public class UpdatesOnly {
 
-	private static Logger logger = LoggerFactory.getLogger(Main.class);
+	private static Logger logger = LoggerFactory.getLogger(UpdatesOnly.class);
 	private AtomicInteger sequence = new AtomicInteger(0);
-	public Main() {
+	public UpdatesOnly() {
 
 		String contactPointsStr = PropertyHelper.getProperty("contactPoints", "localhost");
 		int noOfMessages = Integer.parseInt(PropertyHelper.getProperty("noOfMessages", "100000"));
 		int noOfThreads = Integer.parseInt(PropertyHelper.getProperty("noOfThreads", "4"));		
 		
-		BlockingQueue<FixMessage> insertQueue = new ArrayBlockingQueue<FixMessage>(1000);
+		BlockingQueue<FixUpdate> updateQueue = new ArrayBlockingQueue<FixUpdate>(1000);
 		
-		ExecutorService insertExecutor = Executors.newFixedThreadPool(noOfThreads);
+		ExecutorService updateExecutor = Executors.newFixedThreadPool(noOfThreads);
 		final FixMessageDao dao = new FixMessageDao(contactPointsStr.split(","));		
 
 		for (int i = 0; i < noOfThreads; i++) {
-			insertExecutor.execute(new FixMessageWriter(dao, insertQueue));
+			updateExecutor.execute(new FixMessageUpdater(dao, updateQueue));
 		}
 
 		Timer timer = new Timer();
-		for (int i = 0; i < noOfMessages; i++){
+		for (int i = 0; i < noOfMessages * 4; i++){
+			
+			int randomId = new Double((Math.random()*noOfMessages) + 1).intValue();
 			
 			try {
-				insertQueue.put(getSequenceMessage());
+				updateQueue.put(new FixUpdate("qty", new Integer(new Double(Math.random()*100).intValue()), randomId));
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 			
 			if(i % 10000 == 0){
-				logger.info("Inserted " + i + " messages");
+				logger.info("Updated " + i + " messages");
 			}
 		}
 		
-		timer.end();		
-		logger.info(timer.getTimeTakenMillis() + "ms to process " + noOfMessages + " messages (" + (noOfMessages/timer.getTimeTakenSeconds()) +" a sec)");
+		timer.end();
+		logger.info(timer.getTimeTakenSeconds() + "sec to update " + noOfMessages*100 + " messages (" + (noOfMessages*4/timer.getTimeTakenSeconds()) +" a sec)");
 		
-		insertExecutor.shutdown();
-		try {
-			insertExecutor.awaitTermination(10, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		
 	}
 
 	private FixMessage getSequenceMessage() {
@@ -81,7 +78,7 @@ public class Main {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		new Main();
+		new UpdatesOnly();
 
 		System.exit(0);
 	}
